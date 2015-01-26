@@ -82,7 +82,7 @@ int main( int argc, char** argv)
   cout << endl;
 
   int t;
-  int nt = 1;
+  int nt = 8;
 
   for( t=0; t<nt; t++)
   {
@@ -106,12 +106,25 @@ int main( int argc, char** argv)
     if( !myID)
     {
       // Send u[n-1] to proc 1.
-      // TODO
+      MPI_Send( /*const void *buf       */ u + (n-1)
+              , /*int count             */ 1
+              , /*MPI_Datatype datatype */ MPI_DOUBLE
+              , /*int dest              */ 1
+              , /*int tag               */ 0
+              , /*MPI_Comm comm         */ MPI_COMM_WORLD
+              );
     }
     else
     {
       // Recv u[0] from proc 0.
-      // TODO
+      MPI_Recv( /*void *buf             */ u
+              , /*int count             */ 1
+              , /*MPI_Datatype datatype */ MPI_DOUBLE
+              , /*int source            */ 0
+              , /*int tag               */ 0
+              , /*MPI_Comm comm         */ MPI_COMM_WORLD
+              , /*MPI_Status *status    */ &status
+              );
     }
 
     // +---+---+---+---+---+---+---+---+...+
@@ -126,18 +139,37 @@ int main( int argc, char** argv)
     if( !myID)
     {
       // Recv u[n] from proc 1.
-      // TODO
+      MPI_Recv( /*void *buf             */ u + n
+              , /*int count             */ 1
+              , /*MPI_Datatype datatype */ MPI_DOUBLE
+              , /*int source            */ 1
+              , /*int tag               */ 0
+              , /*MPI_Comm comm         */ MPI_COMM_WORLD
+              , /*MPI_Status *status    */ &status
+              );
     }
     else
     {
       // Send u[1] to proc 0.
-      // TODO
+      MPI_Send( /*const void *buf       */ u + 1
+              , /*int count             */ 1
+              , /*MPI_Datatype datatype */ MPI_DOUBLE
+              , /*int dest              */ 0
+              , /*int tag               */ 0
+              , /*MPI_Comm comm         */ MPI_COMM_WORLD
+              );
     }
+
   }
 
   cout << "Proc " << myID << " of [0," << numProcs << ") -- "
-       << "After  communication:  "
-       << endl;
+       << "After communication:  ";
+
+  for( i=0; i<n+1; i++)
+  {
+    cout << " " << u[i];
+  }
+  cout << endl;
 
   MPI_Finalize();
 
