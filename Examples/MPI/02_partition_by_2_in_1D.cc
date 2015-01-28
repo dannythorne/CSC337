@@ -82,7 +82,7 @@ int main( int argc, char** argv)
   cout << endl;
 
   int t;
-  int nt = 8;
+  int nt = 1;
 
   for( t=0; t<nt; t++)
   {
@@ -163,13 +163,38 @@ int main( int argc, char** argv)
   }
 
   cout << "Proc " << myID << " of [0," << numProcs << ") -- "
-       << "After communication:  ";
+       << "After updates:  ";
 
   for( i=0; i<n+1; i++)
   {
     cout << " " << u[i];
   }
   cout << endl;
+
+  double usum = 0.0;
+  for( i=0; i<n+1; i++)
+  {
+    usum += u[i+myID];
+  }
+
+  double g_usum;
+
+  MPI_Reduce( /* const void *sendbuf   */ &usum
+            , /* void *recvbuf         */ &g_usum
+            , /* int count             */ 1
+            , /* MPI_Datatype datatype */ MPI_DOUBLE
+            , /* MPI_Op op             */ MPI_SUM
+            , /* int root              */ 0
+            , /* MPI_Comm comm         */ MPI_COMM_WORLD
+            );
+
+  if( !myID)
+  {
+    cout << "g_usum = " << g_usum << endl;
+  }
+
+  delete [] u;
+  delete [] unext;
 
   MPI_Finalize();
 
