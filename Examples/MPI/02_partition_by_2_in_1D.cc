@@ -82,7 +82,7 @@ int main( int argc, char** argv)
   cout << endl;
 
   int t;
-  int nt = 1;
+  int nt = 2;
 
   for( t=0; t<nt; t++)
   {
@@ -172,7 +172,7 @@ int main( int argc, char** argv)
   cout << endl;
 
   double usum = 0.0;
-  for( i=0; i<n+1; i++)
+  for( i=0; i<n; i++)
   {
     usum += u[i+myID];
   }
