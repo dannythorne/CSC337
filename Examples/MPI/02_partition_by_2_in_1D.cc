@@ -82,7 +82,7 @@ int main( int argc, char** argv)
   cout << endl;
 
   int t;
-  int nt = 2;
+  int nt = 1;
 
   for( t=0; t<nt; t++)
   {

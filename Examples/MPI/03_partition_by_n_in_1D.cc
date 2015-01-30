@@ -46,12 +46,33 @@ int main( int argc, char** argv)
   }
   cout << endl;
 
+  // +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  // . 0 | 1 | 1 | 1 | 1 | 0 .       . 0 | 3 | 3 | 3 | 3 | 0 .
+  // +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  //                 +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  //                 . 0 | 2 | 2 | 2 | 2 | 0 .       . 0 | 4 | 4 | 4 | 4 | 0 .
+  //                 +...+---+---+---+---+...+       +...+---+---+---+---+...+
+
+
   int t;
-  int nt = 0;
+  int nt = 1;
 
   for( t=0; t<nt; t++)
   {
     // Communication step(s)
+
+  // Even procs send/recv to/from odd procs in positive direction.
+  // Odd procs recv/send from/to even procs in negative direction.
+  //
+  // +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  // . 0 | 1 | 1 | 1 | 1 | 2 .       . 0 | 3 | 3 | 3 | 3 | 4 .
+  // +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  //                   |   ^                           |   ^
+  //                   |   |                           |   |
+  //                   v   |                           v   |
+  //                 +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  //                 . 1 | 2 | 2 | 2 | 2 | 0 .       . 3 | 4 | 4 | 4 | 4 | 0 .
+  //                 +...+---+---+---+---+...+       +...+---+---+---+---+...+
     if( 1-myID%2)
     {
       // Send in positive direction.
@@ -95,6 +116,18 @@ int main( int argc, char** argv)
               );
     }
 
+  // Even procs send/recv to/from odd procs in negative direction.
+  // Odd procs recv/send from/to even procs in positive direction.
+  //
+  // +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  // . 4 | 1 | 1 | 1 | 1 | 2 .       . 2 | 3 | 3 | 3 | 3 | 4 .
+  // +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  //   ^   |                           ^   |                           |   |
+  //   |   |                           |   |                           |   |
+  //   |   |                           |   v                           |   v
+  //                 +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  //                 . 1 | 2 | 2 | 2 | 2 | 3 .       . 3 | 4 | 4 | 4 | 4 | 1 .
+  //                 +...+---+---+---+---+...+       +...+---+---+---+---+...+
     if( 1-myID%2)
     {
       // Send in negative direction.
@@ -129,6 +162,19 @@ int main( int argc, char** argv)
     u = unext;
     unext = utemp;
   }
+
+  // Expected result after one update.
+  // (Decimal point omitted due to space constraint in illustration.)
+  //
+  // +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  // . 4 |175| 1 | 1 |125| 2 .       . 2 |275| 3 | 3 |325| 4 .
+  // +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  //                 +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  //                 . 1 |175| 2 | 2 |225| 3 .       . 3 |375| 4 | 4 |325| 1 .
+  //                 +...+---+---+---+---+...+       +...+---+---+---+---+...+
+  //
+  // NOTE: In some cases it could be desirable to put this diagnostics
+  // output inside the loop after every update.
 
   cout << "Proc " << myID << " of [0," << numProcs << ") -- "
        << "03 After updates       :  ";
