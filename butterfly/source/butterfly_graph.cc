@@ -15,7 +15,7 @@ Butterfly_Graph::Butterfly_Graph(int n)
 
   for(int i = 0; i < n; i++)
   {
-    for(int j = 0; j <= log_2_of_n; j++)
+    for(int j = 0; j < log_2_of_n + 1; j++)
     {
       nodes[i][j].i = i;
       nodes[i][j].j = j;
@@ -31,13 +31,13 @@ Butterfly_Graph::Butterfly_Graph(int n)
         nodes[i][j].down = &nodes[i][j + 1];
         if( (i % (n / (int)pow(2.0, (double)j))) < (n / (int)pow(2.0, (double)(j+1))))
         {
-          nodes[i][j].diagonal = &nodes[i + (n / (int)pow(2.0, (double)(j+1)))][j - 1];
+          nodes[i][j].diagonal = &nodes[i + (n / (int)pow(2.0, (double)(j+1)))][j + 1];
           nodes[i][j].is_left_diagonal = false;
           // This Node has a right diagonal.
         }
         else
         {
-          nodes[i][j].diagonal = &nodes[i - (n / (int)pow(2.0, (double)(j+1)))][j - 1];
+          nodes[i][j].diagonal = &nodes[i - (n / (int)pow(2.0, (double)(j+1)))][j + 1];
           nodes[i][j].is_left_diagonal = true;
           // This Node has a left diagonal.
         }
@@ -54,6 +54,33 @@ Butterfly_Graph::Butterfly_Graph(int n)
     }
   }
   cout << "Exit" << endl;
+  for(int i = 0; i < n; i++)
+  {
+    for(int j = 0; j < log_2_of_n + 1; j++)
+    {
+      cout << "The Current Node: " << endl;
+      cout << nodes[i][j].i << " ";
+      cout << nodes[i][j].j << endl;
+#if 0
+      cout << "The Node above: " << endl;
+      cout << nodes[i][j].up->i << " ";
+      cout << nodes[i][j].up->j << endl;
+#endif
+      if(nodes[i][j].down != NULL)
+      {
+        cout << "The Node below: " << endl;
+        cout << nodes[i][j].down->i << " ";
+        cout << nodes[i][j].down->j << endl;
+        cout << "Is left diagonal?: " << endl;
+        cout << nodes[i][j].is_left_diagonal << endl;
+
+        cout << "The Diagonal Node: " << endl;
+        cout << nodes[i][j].diagonal->i << " ";
+        cout << nodes[i][j].diagonal->j << endl;
+      }
+      cout << endl << endl;
+    }
+  }
 }
 
 Butterfly_Graph::~Butterfly_Graph()
@@ -79,14 +106,15 @@ void Butterfly_Graph::send_message(int sender, int receiver)
     cout << "local i: " << local_i << endl;
     cout << "local j: " << local_j << endl;
     i = local_i;
+
     if( nodes[i][j].down == NULL ) {
       cout << "down is NULL" << endl;
     }
-    else {}
+
     if( nodes[i][j].diagonal == NULL ) {
       cout << "diagonal is NULL" << endl;
     }
-    else {}
+
     if(test1[j] == '1')
     {
       if(nodes[i][j].is_left_diagonal == false)
