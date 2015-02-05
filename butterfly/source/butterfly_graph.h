@@ -7,6 +7,8 @@
 
 struct Node{
 
+  int i;
+  int j;
   Node* down;
   Node* up;
   Node* diagonal;
@@ -25,13 +27,17 @@ class Butterfly_Graph{
 
   public:
 
-    Butterfly_Graph();
     Butterfly_Graph(int n);
+    Butterfly_Graph();
     ~Butterfly_Graph();
+
+    void send_message(int sender, int receiver); // void for now
 
   private:
 
     Node** nodes;
+    int num_procs;
+    int log_2_of_n;
 
 };
 
