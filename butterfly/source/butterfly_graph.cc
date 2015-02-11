@@ -166,7 +166,7 @@ void Butterfly_Graph::send_message(int sender, int receiver)
     {
       cout << display[i][j];
     }
-  cout << endl;
+  cout << endl << endl << endl;
   }
 }
 
