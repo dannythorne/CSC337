@@ -16,13 +16,6 @@ struct Node{
 
 };
 
-struct Message{
-
-  int nodes_visited;
-  std::string message;
-
-};
-
 class Butterfly_Graph{
 
   public:

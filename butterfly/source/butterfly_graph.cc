@@ -99,6 +99,16 @@ Butterfly_Graph::Butterfly_Graph()
 
 void Butterfly_Graph::send_message(int sender, int receiver)
 {
+  int first = num_procs;
+  int second = log_2_of_n + 1;
+  string display[second][first];
+  for(int i = 0; i < second; i++)
+  {
+    for(int j = 0; j < first; j++)
+    {
+      display[i][j] = ". ";
+    }
+  }
   char* test2 = input_to_binary(receiver);
 
   int i = sender;
@@ -110,7 +120,10 @@ void Butterfly_Graph::send_message(int sender, int receiver)
   {
     cout << "local i: " << local_i << endl;
     cout << "local j: " << local_j << endl;
+    cout << endl;
     i = local_i;
+    display[j][i] = "x ";
+
 
     if(test2[j] == '1')
     {
@@ -118,11 +131,13 @@ void Butterfly_Graph::send_message(int sender, int receiver)
       {
         local_i = nodes[i][j].diagonal->i;
         local_j = nodes[i][j].diagonal->j;
+    display[j][i] = "x ";
       }
       else
       {
         local_i = nodes[i][j].down->i;
         local_j = nodes[i][j].down->j;
+    display[j][i] = "x ";
       }
     }
     else
@@ -131,17 +146,28 @@ void Butterfly_Graph::send_message(int sender, int receiver)
       {
         local_i = nodes[i][j].diagonal->i;
         local_j = nodes[i][j].diagonal->j;
+    display[j][i] = "x ";
       }
       else
       {
         local_i = nodes[i][j].down->i;
         local_j = nodes[i][j].down->j;
+    display[j][i] = "x ";
       }
     }
   }
+    display[local_j][local_i] = "x ";
   cout << "local i: " << local_i << endl;
   cout << "local j: " << local_j << endl;
   cout << endl;
+  for(int i = 0; i < second; i++)
+  {
+    for(int j = 0; j < first; j++)
+    {
+      cout << display[i][j];
+    }
+  cout << endl;
+  }
 }
 
 char* Butterfly_Graph::input_to_binary(int input)
