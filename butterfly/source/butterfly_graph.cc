@@ -93,8 +93,13 @@ Butterfly_Graph::Butterfly_Graph()
 
 void Butterfly_Graph::send_message(int sender, int receiver)
 {
-  string test1 = "110";
+  char* test1 = input_to_binary(sender);
+  char* test2 = input_to_binary(receiver);
 
+  cout << test1 << endl;
+  cout << test2 <<endl;
+
+#if 0
   sender = 0;
   int i = sender;
 
@@ -145,4 +150,26 @@ void Butterfly_Graph::send_message(int sender, int receiver)
   cout << "cout << local_i << endl;" << endl;
   cout << local_i << endl;
   cout << local_j << endl;
+#endif
+}
+
+char* Butterfly_Graph::input_to_binary(int input)
+{
+  int num_digits = log_2_of_n;
+  char* result = new char[num_digits];
+
+  for(int i = num_digits - 1; i >= 0; i--)
+  {
+    if(input % 2)
+    {
+      result[i] = '1';
+    }
+    else
+    {
+      result[i] = '0';
+    }
+    input /= 2;
+  }
+
+  return result;
 }
