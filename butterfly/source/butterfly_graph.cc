@@ -139,8 +139,9 @@ void Butterfly_Graph::send_message(int sender, int receiver)
       }
     }
   }
-  cout << "i: " << local_i << endl;
-  cout << "j: " << local_j << endl;
+  cout << "local i: " << local_i << endl;
+  cout << "local j: " << local_j << endl;
+  cout << endl;
 }
 
 char* Butterfly_Graph::input_to_binary(int input)
