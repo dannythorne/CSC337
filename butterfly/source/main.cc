@@ -21,18 +21,21 @@ int main( int argc, char** argv )
     cin >> n;
     result = (int)(n & (n - 1));
   } while( ((n == 0) || (n == 1) || (n == 2) || (n == 4)) || (result != 0) );
+ // while n is not 0 or 1 or 2 or 4 and is not a power of 2.
 
   do
   {
     cout << MESSAGE2;
     cin >> source;
   } while ( source > (n - 1) || source < 0 );
+ // while source is not between 0 and n - 1
 
   do
   {
     cout << MESSAGE3;
     cin >> destination;
   } while ( destination > (n - 1) || destination < 0 );
+ // while destination is not between 0 and n - 1
 
   cout << "Number of processors: " << n << endl;
   cout << "Source: " << source << endl;
