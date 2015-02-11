@@ -53,6 +53,8 @@ Butterfly_Graph::Butterfly_Graph(int n)
       }
     }
   }
+#if 0
+  // For debugging purposes.
   cout << "Exit" << endl;
   for(int i = 0; i < n; i++)
   {
@@ -61,11 +63,14 @@ Butterfly_Graph::Butterfly_Graph(int n)
       cout << "The Current Node: " << endl;
       cout << nodes[i][j].i << " ";
       cout << nodes[i][j].j << endl;
-#if 0
-      cout << "The Node above: " << endl;
-      cout << nodes[i][j].up->i << " ";
-      cout << nodes[i][j].up->j << endl;
-#endif
+
+      if(nodes[i][j].up != NULL)
+      {
+        cout << "The Node above: " << endl;
+        cout << nodes[i][j].up->i << " ";
+        cout << nodes[i][j].up->j << endl;
+      }
+
       if(nodes[i][j].down != NULL)
       {
         cout << "The Node below: " << endl;
@@ -81,6 +86,7 @@ Butterfly_Graph::Butterfly_Graph(int n)
       cout << endl << endl;
     }
   }
+#endif
 }
 
 Butterfly_Graph::~Butterfly_Graph()
@@ -93,17 +99,11 @@ Butterfly_Graph::Butterfly_Graph()
 
 void Butterfly_Graph::send_message(int sender, int receiver)
 {
-  char* test1 = input_to_binary(sender);
   char* test2 = input_to_binary(receiver);
 
-  cout << test1 << endl;
-  cout << test2 <<endl;
-
-#if 0
-  sender = 0;
   int i = sender;
+  int local_i = sender;
 
-  int local_i = 0;
   int local_j = 0;
 
   for(int j = 0; j < log_2_of_n; j = local_j)
@@ -112,15 +112,7 @@ void Butterfly_Graph::send_message(int sender, int receiver)
     cout << "local j: " << local_j << endl;
     i = local_i;
 
-    if( nodes[i][j].down == NULL ) {
-      cout << "down is NULL" << endl;
-    }
-
-    if( nodes[i][j].diagonal == NULL ) {
-      cout << "diagonal is NULL" << endl;
-    }
-
-    if(test1[j] == '1')
+    if(test2[j] == '1')
     {
       if(nodes[i][j].is_left_diagonal == false)
       {
@@ -147,10 +139,8 @@ void Butterfly_Graph::send_message(int sender, int receiver)
       }
     }
   }
-  cout << "cout << local_i << endl;" << endl;
-  cout << local_i << endl;
-  cout << local_j << endl;
-#endif
+  cout << "i: " << local_i << endl;
+  cout << "j: " << local_j << endl;
 }
 
 char* Butterfly_Graph::input_to_binary(int input)
