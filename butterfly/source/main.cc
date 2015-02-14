@@ -1,46 +1,51 @@
 #include "butterfly_graph.h"
+#include "pthread.h"
 using namespace std;
 
-#define MESSAGE0 "An implementation of the 2D Butterfly Topology.\n"
-#define MESSAGE1 "Enter number of processors n (power of 2 except 2 or 4): \n"
-#define MESSAGE2 "Enter message source (between 0 and n - 1): \n"
-#define MESSAGE3 "Enter message destination (between 0 and n - 1): \n"
+void* make_graph(void* size);
 
-int main( int argc, char** argv )
+int main(int argc, char** argv)
 {
   int n;
   int source;
   int destination;
   int result;
+  void* thread_graph;
+  pthread_t init_thread;
 
   cout << MESSAGE0;
-
   do {
     cout << MESSAGE1;
     cin >> n;
-    result = (int)(n & (n - 1));
+    result = (n & (n - 1));
   } while( (n <= 4) || (result != 0) );
- // while n is less than 4 or not a power of 2.
+
+  if(pthread_create(&init_thread, NULL, &make_graph, &n) != 0) return THREAD_CREATE_FAILURE;
 
   do {
     cout << MESSAGE2;
     cin >> source;
   } while ( source > (n - 1) || source < 0 );
- // while source is not between 0 and n - 1
 
   do {
     cout << MESSAGE3;
     cin >> destination;
   } while ( destination > (n - 1) || destination < 0 );
- // while destination is not between 0 and n - 1
 
-  cout << "Number of processors: " << n << endl;
-  cout << "Source: " << source << endl;
-  cout << "Destination: " << destination << endl;
+  cout << NUM_PROCS(n);
+  cout << SOURCE(source);
+  cout << DESTINATION(destination);
 
+  if(pthread_join(init_thread, &thread_graph) != 0) return THREAD_JOIN_FAILURE;
 
-  Butterfly_Graph* graph = new Butterfly_Graph(n);
+  Butterfly_Graph* graph = static_cast<Butterfly_Graph*>(thread_graph);
   graph->send_message(source, destination);
-
   return 0;
+}
+
+void* make_graph(void* size)
+{
+  int* ptr = static_cast<int*>(size);
+  void* graph = new Butterfly_Graph(*ptr);
+  return graph;
 }
