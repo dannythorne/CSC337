@@ -1,5 +1,6 @@
 #include "butterfly_graph.h"
 #include "pthread.h"
+#include "msg_def.h"
 using namespace std;
 
 void* make_graph(void* size);
@@ -25,12 +26,12 @@ int main(int argc, char** argv)
   do {
     cout << MESSAGE2;
     cin >> source;
-  } while ( source > (n - 1) || source < 0 );
+  } while( (source > (n - 1)) || (source < 0) );
 
   do {
     cout << MESSAGE3;
     cin >> destination;
-  } while ( destination > (n - 1) || destination < 0 );
+  } while( (destination > (n - 1)) || (destination < 0) );
 
   cout << NUM_PROCS(n);
   cout << SOURCE(source);
