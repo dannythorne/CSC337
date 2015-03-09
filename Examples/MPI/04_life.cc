@@ -120,8 +120,8 @@ int main()
         sum += 1&(u2d[jp][ibytep]>>7); // msb of ibytep
         sum += 1&(u2d[jm][ibyte]>>i );
         sum += 1&(u2d[jp][ibyte]>>i );
-        update( u2d, u2d_next, ibyte, i, j, sum);
 
+        update( u2d, u2d_next, ibyte, i, j, sum);
       }
     }
 
