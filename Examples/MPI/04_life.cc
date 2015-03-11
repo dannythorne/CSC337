@@ -52,6 +52,7 @@ int main()
     }
   }
 
+  // Initialize with glider pattern in top left corner.
   u2d[3][/*ibyte*/0] |= 1<<6;
   u2d[3][/*ibyte*/0] |= 1<<5;
   u2d[3][/*ibyte*/0] |= 1<<4;
