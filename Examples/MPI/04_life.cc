@@ -18,7 +18,7 @@ int main()
 
   ni = 16;
   nj = 16;
-  if( 0/* ni not a multiple of 8*/) { /* fix it */ }
+  if( ni%8) { ni = ni + 8 - ni%8;}
   nibytes = ni/8;
 
   int n = nibytes*nj;
@@ -47,15 +47,21 @@ int main()
   {
     for( ibyte=0; ibyte<nibytes; ibyte++)
     {
-      u2d[j][ibyte] = j*nibytes + ibyte;
+      u2d[j][ibyte] = 0; // j*nibytes + ibyte;
       u2d_next[j][ibyte] = 0;
     }
   }
 
+  u2d[3][/*ibyte*/0] |= 1<<6;
+  u2d[3][/*ibyte*/0] |= 1<<5;
+  u2d[3][/*ibyte*/0] |= 1<<4;
+  u2d[2][/*ibyte*/0] |= 1<<4;
+  u2d[1][/*ibyte*/0] |= 1<<5;
+
   cout << endl << "Universe seed:" << endl;
   display( u2d, nibytes, nj);
 
-  int t, nt = 1;
+  int t, nt = 64;
   int ibytep, ibytem;
   int ip, im;
   int jp, jm;
@@ -76,15 +82,16 @@ int main()
         // msb (i=7) separately
         i = 7;
         ip = i - 1; // bit positions indexed backwards
+        im = 0;
         sum = 0;
-        sum += 1&(u2d[j ][ibytem]); // lsb of ibytem
-        sum += 1&(u2d[j ][ibyte]>>ip);
-        sum += 1&(u2d[jm][ibytem]); // lsb of ibytem
-        sum += 1&(u2d[jm][ibyte]>>ip);
-        sum += 1&(u2d[jp][ibytem]); // lsb of ibytem
-        sum += 1&(u2d[jp][ibyte]>>ip);
-        sum += 1&(u2d[jm][ibyte]>>i );
-        sum += 1&(u2d[jp][ibyte]>>i );
+        sum += 1&(u2d[j ][ibytem]>>im); // lsb of ibytem
+        sum += 1&(u2d[j ][ibyte ]>>ip);
+        sum += 1&(u2d[jm][ibytem]>>im); // lsb of ibytem
+        sum += 1&(u2d[jm][ibyte ]>>ip);
+        sum += 1&(u2d[jp][ibytem]>>im); // lsb of ibytem
+        sum += 1&(u2d[jp][ibyte ]>>ip);
+        sum += 1&(u2d[jm][ibyte ]>>i );
+        sum += 1&(u2d[jp][ibyte ]>>i );
 
         update( u2d, u2d_next, ibyte, i, j, sum);
 
@@ -110,16 +117,17 @@ int main()
 
         // lsb (i=0) separately
         i = 0;
+        ip = 7;
         im = i+1; // bit positions indexed backwards
         sum = 0;
-        sum += 1&(u2d[j ][ibyte]>>im);
-        sum += 1&(u2d[j ][ibytep]>>7); // msb of ibytep
-        sum += 1&(u2d[jm][ibyte]>>im);
-        sum += 1&(u2d[jm][ibytep]>>7); // msb of ibytep
-        sum += 1&(u2d[jp][ibyte]>>im);
-        sum += 1&(u2d[jp][ibytep]>>7); // msb of ibytep
-        sum += 1&(u2d[jm][ibyte]>>i );
-        sum += 1&(u2d[jp][ibyte]>>i );
+        sum += 1&(u2d[j ][ibyte ]>>im);
+        sum += 1&(u2d[j ][ibytep]>>ip); // msb of ibytep
+        sum += 1&(u2d[jm][ibyte ]>>im);
+        sum += 1&(u2d[jm][ibytep]>>ip); // msb of ibytep
+        sum += 1&(u2d[jp][ibyte ]>>im);
+        sum += 1&(u2d[jp][ibytep]>>ip); // msb of ibytep
+        sum += 1&(u2d[jm][ibyte ]>>i );
+        sum += 1&(u2d[jp][ibyte ]>>i );
 
         update( u2d, u2d_next, ibyte, i, j, sum);
       }
@@ -129,7 +137,8 @@ int main()
     utemp = u2d;
     u2d = u2d_next;
     u2d_next = utemp;
-  }
+
+  } // for( t=0; t<nt; t++)
 
   cout << endl << "Universe after " << nt << " update(s):" << endl;
   display( u2d, nibytes, nj);
@@ -160,7 +169,8 @@ void update( char** u2d
     }
     else
     {
-      // TODO: copy the 1
+      // copy the 1
+      u2d_next[j][ibyte] |= (1<<i);
     }
   }
   else
@@ -172,7 +182,8 @@ void update( char** u2d
     }
     else
     {
-      // TODO: copy the 0
+      // copy the 0
+      u2d_next[j][ibyte] &= (~(1<<i));
     }
   }
 }
