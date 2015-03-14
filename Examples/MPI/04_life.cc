@@ -2,19 +2,33 @@
 #include <iostream>
 using namespace std;
 
+int neighbor_sum( char** u2d
+                , int i
+                , int ip
+                , int im
+                , int ibyte
+                , int ibytep
+                , int ibytem
+                , int j
+                , int jp
+                , int jm
+                );
+
 void update( char** u2d
            , char** u2d_next
            , int ibyte
            , int i
            , int j
-           , int sum );
+           , int sum
+           );
 
 void display( char** u2d
             , int nibytes
             , int nj
             , int ibyte0
             , int j0
-            , int olap );
+            , int olap
+            );
 
 int main()
 {
@@ -90,23 +104,13 @@ int main()
 
       for( ibyte=ibyte0; ibyte<ibyte0+nibytes; ibyte++)
       {
-        ibytep = ( ibyte-ibyte0 + 1) % nibytes + ibyte0;
-        ibytem = ( ibyte-ibyte0 + nibytes - 1) % nibytes + ibyte0;
-
-        // msb (i=7) separately
+        // msb (i=7)
         i = 7;
         ip = i - 1; // bit positions indexed backwards
         im = 0;
-        sum = 0;
-        sum += 1&(u2d[j ][ibytem]>>im); // lsb of ibytem
-        sum += 1&(u2d[j ][ibyte ]>>ip);
-        sum += 1&(u2d[jm][ibytem]>>im); // lsb of ibytem
-        sum += 1&(u2d[jm][ibyte ]>>ip);
-        sum += 1&(u2d[jp][ibytem]>>im); // lsb of ibytem
-        sum += 1&(u2d[jp][ibyte ]>>ip);
-        sum += 1&(u2d[jm][ibyte ]>>i );
-        sum += 1&(u2d[jp][ibyte ]>>i );
-
+        ibytem = ( ibyte-ibyte0 + nibytes - 1) % nibytes + ibyte0;
+        ibytep = ibyte;
+        sum = neighbor_sum( u2d, i, ip, im, ibyte, ibytep, ibytem, j, jp, jm);
         update( u2d, u2d_next, ibyte, i, j, sum);
 
         for( i=6; i>=1; i--)
@@ -114,35 +118,17 @@ int main()
           // interior bits
           ip = i - 1; // bit positions indexed backwards
           im = i + 1; // bit positions indexed backwards
-
-          // update
-          sum = 0;
-          sum += 1&(u2d[j ][ibyte]>>im);
-          sum += 1&(u2d[j ][ibyte]>>ip);
-          sum += 1&(u2d[jm][ibyte]>>im);
-          sum += 1&(u2d[jm][ibyte]>>ip);
-          sum += 1&(u2d[jp][ibyte]>>im);
-          sum += 1&(u2d[jp][ibyte]>>ip);
-          sum += 1&(u2d[jm][ibyte]>>i );
-          sum += 1&(u2d[jp][ibyte]>>i );
-
+          ibytem = ibyte;
+          sum = neighbor_sum( u2d, i, ip, im, ibyte, ibytep, ibytem, j, jp, jm);
           update( u2d, u2d_next, ibyte, i, j, sum);
         }
 
-        // lsb (i=0) separately
+        // lsb (i=0)
         i = 0;
         ip = 7;
         im = i+1; // bit positions indexed backwards
-        sum = 0;
-        sum += 1&(u2d[j ][ibyte ]>>im);
-        sum += 1&(u2d[j ][ibytep]>>ip); // msb of ibytep
-        sum += 1&(u2d[jm][ibyte ]>>im);
-        sum += 1&(u2d[jm][ibytep]>>ip); // msb of ibytep
-        sum += 1&(u2d[jp][ibyte ]>>im);
-        sum += 1&(u2d[jp][ibytep]>>ip); // msb of ibytep
-        sum += 1&(u2d[jm][ibyte ]>>i );
-        sum += 1&(u2d[jp][ibyte ]>>i );
-
+        ibytep = ( ibyte-ibyte0 + 1) % nibytes + ibyte0;
+        sum = neighbor_sum( u2d, i, ip, im, ibyte, ibytep, ibytem, j, jp, jm);
         update( u2d, u2d_next, ibyte, i, j, sum);
       }
     }
@@ -163,6 +149,32 @@ int main()
   delete [] u1d;
 
   return 0;
+}
+
+int neighbor_sum( char** u2d
+                , int i
+                , int ip
+                , int im
+                , int ibyte
+                , int ibytep
+                , int ibytem
+                , int j
+                , int jp
+                , int jm
+                )
+{
+  int sum = 0;
+  sum += 1&(u2d[j ][ibytem]>>im);
+  sum += 1&(u2d[j ][ibytep]>>ip);
+  sum += 1&(u2d[jm][ibytem]>>im);
+  sum += 1&(u2d[jm][ibytep]>>ip);
+  // TODO: bail when sum exceeds 3?
+  sum += 1&(u2d[jp][ibytem]>>im);
+  sum += 1&(u2d[jp][ibytep]>>ip);
+  sum += 1&(u2d[jm][ibyte ]>>i );
+  sum += 1&(u2d[jp][ibyte ]>>i );
+
+  return sum;
 }
 
 void update( char** u2d
