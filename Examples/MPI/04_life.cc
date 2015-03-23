@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <mpi.h>
 using namespace std;
 
 int neighbor_sum( char** u2d
@@ -30,13 +31,31 @@ void display( char** u2d
             , int olap
             );
 
-int main()
+void display_with_overlap(
+              char** u2d
+            , int nnibytes
+            , int nnj
+            , int myID
+            );
+
+int main( int argc, char** argv)
 {
+
+  int numProcs;
+  int myID;
+  MPI_Status status;
+
+  MPI_Init( &argc, &argv);
+  MPI_Comm_size( MPI_COMM_WORLD, &numProcs);
+  MPI_Comm_rank( MPI_COMM_WORLD, &myID);
+
+  cout << "Proc " << myID << " of [0," << numProcs << ")." << endl;
+
   int ni, nj;
   int nibytes;
 
-  ni = 16;
-  nj = 16;
+  ni = 8;
+  nj = 8;
   if( ni%8) { ni = ni + 8 - ni%8;}
   nibytes = ni/8;
 
@@ -66,8 +85,8 @@ int main()
 
   for( j=0; j<nnj; j++)
   {
-    u2d[j] = u1d + j*nibytes; // TODO
-    u2d_next[j] = u1d_next + j*nibytes; // TODO
+    u2d[j] = u1d + j*nnibytes;
+    u2d_next[j] = u1d_next + j*nnibytes;
   }
 
   for( j=0; j<nnj; j++)
@@ -80,16 +99,21 @@ int main()
   }
 
   // Initialize with glider pattern in top left corner.
-  u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<6;
-  u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<5;
-  u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<4;
-  u2d[j0+2][ibyte0+/*ibyte*/0] |= 1<<4;
-  u2d[j0+1][ibyte0+/*ibyte*/0] |= 1<<5;
+  if( !myID)
+  {
+    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<6;
+    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<5;
+    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<4;
+    u2d[j0+2][ibyte0+/*ibyte*/0] |= 1<<4;
+    u2d[j0+1][ibyte0+/*ibyte*/0] |= 1<<5;
+  }
 
-  cout << endl << "Universe seed:" << endl;
-  display( u2d, nibytes, nj, ibyte0, j0, olap);
+  cout << endl
+       << "Proc " << myID << " "
+       << "Universe seed:" << endl;
+  display_with_overlap( u2d, nnibytes, nnj, myID);
 
-  int t, nt = 64;
+  int t, nt = 1;
   int ibytep, ibytem;
   int ip, im;
   int jp, jm;
@@ -97,6 +121,40 @@ int main()
 
   for( t=0; t<nt; t++)
   {
+
+    // Communicate
+    if( !myID)
+    {
+      // Proc 0 to Proc 1
+      MPI_Send(
+            /* const void *buf       */ u1d + nnibytes*(nnj-2*j0)
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ 1
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          );
+    }
+    else
+    {
+      // Proc 1 to Proc 0
+      MPI_Recv(
+            /* const void *buf       */ u1d + 0
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ 0
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          , /* MPI_Status* status    */ &status
+          );
+    }
+
+    cout << endl
+         << "Proc " << myID << " "
+         << "After communication:"
+         << endl;
+    display_with_overlap( u2d, nnibytes, nnj, myID);
+
     for( j=j0; j<j0+nj; j++)
     {
       jp = ( j-j0 + 1) % nj + j0;
@@ -140,13 +198,18 @@ int main()
 
   } // for( t=0; t<nt; t++)
 
-  cout << endl << "Universe after " << nt << " update(s):" << endl;
-  display( u2d, nibytes, nj, ibyte0, j0, olap);
+  cout << endl
+       << "Proc " << myID << " "
+       << "Universe after " << nt << " update(s):"
+       << endl;
+  display_with_overlap( u2d, nnibytes, nnj, myID);
 
   delete [] u2d_next;
   delete [] u1d_next;
   delete [] u2d;
   delete [] u1d;
+
+  MPI_Finalize();
 
   return 0;
 }
@@ -226,6 +289,29 @@ void display( char** u2d
   for( j=j0; j<j0+nj; j++)
   {
     for( ibyte=ibyte0; ibyte<ibyte0+nibytes; ibyte++)
+    {
+      for( i=7; i>=0; i--)
+      {
+        cout << " " << (1&(u2d[j][ibyte]>>i));
+      }
+    }
+    cout << endl;
+  }
+}
+
+void display_with_overlap(
+              char** u2d
+            , int nnibytes
+            , int nnj
+            , int myID
+            )
+{
+  int i, j, ibyte;
+
+  for( j=0; j<nnj; j++)
+  {
+    cout << "Proc " << myID << " ";
+    for( ibyte=0; ibyte<nnibytes; ibyte++)
     {
       for( i=7; i>=0; i--)
       {
