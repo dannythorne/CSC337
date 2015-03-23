@@ -35,6 +35,8 @@ void display_with_overlap(
               char** u2d
             , int nnibytes
             , int nnj
+            , int j0
+            , int ibyte0
             , int myID
             );
 
@@ -54,8 +56,8 @@ int main( int argc, char** argv)
   int ni, nj;
   int nibytes;
 
-  ni = 8;
-  nj = 8;
+  ni = 16;
+  nj = 16;
   if( ni%8) { ni = ni + 8 - ni%8;}
   nibytes = ni/8;
 
@@ -101,17 +103,17 @@ int main( int argc, char** argv)
   // Initialize with glider pattern in top left corner.
   if( !myID)
   {
-    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<6;
-    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<5;
-    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<4;
-    u2d[j0+2][ibyte0+/*ibyte*/0] |= 1<<4;
-    u2d[j0+1][ibyte0+/*ibyte*/0] |= 1<<5;
+    u2d[nnj-2*j0+3][ibyte0+/*ibyte*/0] |= 1<<6;
+    u2d[nnj-2*j0+3][ibyte0+/*ibyte*/0] |= 1<<5;
+    u2d[nnj-2*j0+3][ibyte0+/*ibyte*/0] |= 1<<4;
+    u2d[nnj-2*j0+2][ibyte0+/*ibyte*/0] |= 1<<4;
+    u2d[nnj-2*j0+1][ibyte0+/*ibyte*/0] |= 1<<5;
   }
 
   cout << endl
        << "Proc " << myID << " "
        << "Universe seed:" << endl;
-  display_with_overlap( u2d, nnibytes, nnj, myID);
+  display_with_overlap( u2d, nnibytes, nnj, j0, ibyte0, myID);
 
   int t, nt = 1;
   int ibytep, ibytem;
@@ -153,7 +155,7 @@ int main( int argc, char** argv)
          << "Proc " << myID << " "
          << "After communication:"
          << endl;
-    display_with_overlap( u2d, nnibytes, nnj, myID);
+    display_with_overlap( u2d, nnibytes, nnj, j0, ibyte0, myID);
 
     for( j=j0; j<j0+nj; j++)
     {
@@ -202,7 +204,7 @@ int main( int argc, char** argv)
        << "Proc " << myID << " "
        << "Universe after " << nt << " update(s):"
        << endl;
-  display_with_overlap( u2d, nnibytes, nnj, myID);
+  display_with_overlap( u2d, nnibytes, nnj, j0, ibyte0, myID);
 
   delete [] u2d_next;
   delete [] u1d_next;
@@ -303,6 +305,8 @@ void display_with_overlap(
               char** u2d
             , int nnibytes
             , int nnj
+            , int j0
+            , int ibyte0
             , int myID
             )
 {
@@ -311,12 +315,100 @@ void display_with_overlap(
   for( j=0; j<nnj; j++)
   {
     cout << "Proc " << myID << " ";
-    for( ibyte=0; ibyte<nnibytes; ibyte++)
+
+    if( j!=j0-1 && j!=nnj-j0-1)
     {
-      for( i=7; i>=0; i--)
+      for( ibyte=0; ibyte<nnibytes; ibyte++)
       {
-        cout << " " << (1&(u2d[j][ibyte]>>i));
+        i=7;
+        if( ibyte!=ibyte0 && ibyte!=nnibytes-ibyte0)
+        {
+          cout << " " << (1&(u2d[j][ibyte]>>i));
+        }
+        else
+        {
+          if( j>=j0 && j<nnj-j0)
+          {
+            cout << "|" << (1&(u2d[j][ibyte]>>i));
+          }
+          else
+          {
+            cout << "|" << (1&(u2d[j][ibyte]>>i));
+          }
+        }
+
+        for( i=6; i>=0; i--)
+        {
+          cout << " " << (1&(u2d[j][ibyte]>>i));
+        }
       }
+    }
+    else if( j==j0-1)
+    {
+      for( ibyte=0; ibyte<nnibytes; ibyte++)
+      {
+        for( i=7; i>=0; i--)
+        {
+          if( ibyte>=ibyte0 && ibyte<nnibytes-ibyte0)
+          {
+            if( ibyte==ibyte0 && i==7)
+            {
+              cout << "|" << (1&(u2d[j][ibyte]>>i));
+            }
+            else
+            {
+              cout << "_" << (1&(u2d[j][ibyte]>>i));
+            }
+          }
+          else
+          {
+            if( ibyte==nnibytes-ibyte0 && i==7)
+            {
+              cout << "|" << (1&(u2d[j][ibyte]>>i));
+            }
+            else
+            {
+              cout << "_" << (1&(u2d[j][ibyte]>>i));
+            }
+          }
+        }
+      }
+    }
+    else if( j==nnj-j0-1)
+    {
+      for( ibyte=0; ibyte<nnibytes; ibyte++)
+      {
+        for( i=7; i>=0; i--)
+        {
+          if( ibyte>=ibyte0 && ibyte<nnibytes-ibyte0)
+          {
+            if( ibyte==ibyte0 && i==7)
+            {
+              cout << "|" << (1&(u2d[j][ibyte]>>i));
+            }
+            else
+            {
+              cout << "_" << (1&(u2d[j][ibyte]>>i));
+            }
+          }
+          else
+          {
+            if( ibyte==nnibytes-ibyte0 && i==7)
+            {
+              cout << "|" << (1&(u2d[j][ibyte]>>i));
+            }
+            else
+            {
+              cout << "_" << (1&(u2d[j][ibyte]>>i));
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      cout << "Proc " << myID << " " << __FILE__ << " " << __LINE__
+           << " Unhandled case!" << endl;
     }
     cout << endl;
   }
