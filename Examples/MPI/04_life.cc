@@ -100,14 +100,23 @@ int main( int argc, char** argv)
     }
   }
 
-  // Initialize with glider pattern in top left corner.
-  if( !myID)
+  if( 1-myID%2)
   {
+    // Initialize with glider pattern in bottom left corner.
     u2d[nnj-2*j0+3][ibyte0+/*ibyte*/0] |= 1<<6;
     u2d[nnj-2*j0+3][ibyte0+/*ibyte*/0] |= 1<<5;
     u2d[nnj-2*j0+3][ibyte0+/*ibyte*/0] |= 1<<4;
     u2d[nnj-2*j0+2][ibyte0+/*ibyte*/0] |= 1<<4;
     u2d[nnj-2*j0+1][ibyte0+/*ibyte*/0] |= 1<<5;
+  }
+  else
+  {
+    // Initialize with glider pattern in top left corner.
+    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<6;
+    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<5;
+    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<4;
+    u2d[j0+2][ibyte0+/*ibyte*/0] |= 1<<4;
+    u2d[j0+1][ibyte0+/*ibyte*/0] |= 1<<5;
   }
 
   cout << endl
@@ -115,7 +124,7 @@ int main( int argc, char** argv)
        << "Universe seed:" << endl;
   display_with_overlap( u2d, nnibytes, nnj, j0, ibyte0, myID);
 
-  int t, nt = 1;
+  int t, nt = nj*4;
   int ibytep, ibytem;
   int ip, im;
   int jp, jm;
@@ -125,42 +134,111 @@ int main( int argc, char** argv)
   {
 
     // Communicate
-    if( !myID)
+    if( 1-myID%2)
     {
-      // Proc 0 to Proc 1
+      // Proc myID to Proc myID+1 (Even procs to odd procs in positive direction.)
       MPI_Send(
             /* const void *buf       */ u1d + nnibytes*(nnj-2*j0)
           , /* int count             */ nnibytes*j0
           , /* MPI_Datatype datatype */ MPI_CHAR
-          , /* int dest              */ 1
+          , /* int dest              */ myID+1
           , /* int tag               */ 0
           , /* MPI_Comm comm         */ MPI_COMM_WORLD
           );
-    }
-    else
-    {
-      // Proc 1 to Proc 0
+      // Proc myID to Proc myID+1 (Odd procs to even procs in negative direction.)
       MPI_Recv(
-            /* const void *buf       */ u1d + 0
+            /* const void *buf       */ u1d + nnibytes*(nnj-j0)
           , /* int count             */ nnibytes*j0
           , /* MPI_Datatype datatype */ MPI_CHAR
-          , /* int dest              */ 0
+          , /* int dest              */ myID+1
           , /* int tag               */ 0
           , /* MPI_Comm comm         */ MPI_COMM_WORLD
           , /* MPI_Status* status    */ &status
           );
+      // Proc myID to Proc myID-1 (Even procs to odd procs in negative direction.)
+      MPI_Send(
+            /* const void *buf       */ u1d + nnibytes*j0
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ (myID+numProcs-1)%numProcs
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          );
+      // Proc myID to Proc myID-1 (Odd procs to even procs in positive direction)
+      MPI_Recv(
+            /* const void *buf       */ u1d + 0
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ (myID+numProcs-1)%numProcs
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          , /* MPI_Status* status    */ &status
+          );
+
+    }
+    else if( myID%2)
+    {
+      // Proc myID to Proc myID-1 (Even procs to odd procs in positive direction.)
+      MPI_Recv(
+            /* const void *buf       */ u1d + 0
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ myID-1
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          , /* MPI_Status* status    */ &status
+          );
+      // Proc myID to Proc myID-1 (Odd procs to even procs in negative direction.)
+      MPI_Send(
+            /* const void *buf       */ u1d + nnibytes*j0
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ myID-1
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          );
+      // Proc myID to Proc myID+1 (Even procs to odd procs in negative direction.)
+      MPI_Recv(
+            /* const void *buf       */ u1d + nnibytes*(nnj-j0)
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ (myID+1)%numProcs
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          , /* MPI_Status* status    */ &status
+          );
+      // Proc myID to Proc myID+1 (Odd procs to even procs in positive direction)
+      MPI_Send(
+            /* const void *buf       */ u1d + nnibytes*(nnj-2*j0)
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ (myID+1)%numProcs
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          );
+
+    }
+    else
+    {
+      cout << __FILE__ << " -- ERROR line " << __LINE__ << ": Unhandled case." << endl;
     }
 
-    cout << endl
-         << "Proc " << myID << " "
-         << "After communication:"
-         << endl;
-    display_with_overlap( u2d, nnibytes, nnj, j0, ibyte0, myID);
-
-    for( j=j0; j<j0+nj; j++)
+    if( false /*dump after each comm*/) // TODO: Add flag for this.
     {
-      jp = ( j-j0 + 1) % nj + j0;
-      jm = ( j-j0 + nj - 1) % nj + j0;
+      cout << endl
+           << "Proc " << myID << " "
+           << "After communication:"
+           << endl;
+      display_with_overlap( u2d, nnibytes, nnj, j0, ibyte0, myID);
+    }
+
+    for( j=1; j<nnj-1; j++)
+    {
+      // NOTE: In the parallel case, periodicity results from the overlap regions
+      // and communication. Question: Do we want to tool this code to work on a
+      // single process?
+      jp = j-1; // ( j-j0 + 1) % nj + j0;
+      jm = j+1; // ( j-j0 + nj - 1) % nj + j0;
 
       for( ibyte=ibyte0; ibyte<ibyte0+nibytes; ibyte++)
       {
