@@ -101,7 +101,14 @@ void Butterfly_Graph::send_message(int sender, int receiver)
 {
   int first = num_procs;
   int second = log_2_of_n + 1;
-  string display[second][first];
+
+  string** display;
+  display = new string*[second];
+  for( int i=0; i<second; i++)
+  {
+    display[i] = new string[first];
+  }
+
   for(int i = 0; i < second; i++)
   {
     for(int j = 0; j < first; j++)
@@ -168,6 +175,12 @@ void Butterfly_Graph::send_message(int sender, int receiver)
     }
   cout << endl << endl << endl;
   }
+
+  for( int i=0; i<second; i++)
+  {
+    delete [] display[i];
+  }
+  delete [] display;
 }
 
 char* Butterfly_Graph::input_to_binary(int input)
