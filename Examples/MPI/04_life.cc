@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <cmath>
 #include <mpi.h>
 using namespace std;
 
@@ -44,20 +45,38 @@ int main( int argc, char** argv)
 {
 
   int numProcs;
+  int numX, numY;
+
   int myID;
+  int myX, myY;
+
   MPI_Status status;
 
   MPI_Init( &argc, &argv);
   MPI_Comm_size( MPI_COMM_WORLD, &numProcs);
   MPI_Comm_rank( MPI_COMM_WORLD, &myID);
 
-  cout << "Proc " << myID << " of [0," << numProcs << ")." << endl;
+  numX = numY = sqrt(numProcs);
+  if( numX*numX != numProcs || numX%2) // enforce a square of procs and even side length
+  {
+    cout << "need a square of procs and even side length" << endl;
+    MPI_Finalize();
+    exit(1);
+  }
+
+  myX = myID/numY;
+  myY = myID%numY;
+
+  cout << "Proc " << myID
+       << " (" << myX
+       << "," << myY
+       << ") of [0," << numProcs << ")." << endl;
 
   int ni, nj;
   int nibytes;
 
-  ni = 16;
-  nj = 16;
+  ni = 8;
+  nj = 8;
   if( ni%8) { ni = ni + 8 - ni%8;}
   nibytes = ni/8;
 
@@ -103,20 +122,20 @@ int main( int argc, char** argv)
   if( 1-myID%2)
   {
     // Initialize with glider pattern in bottom left corner.
-    u2d[nnj-2*j0+3][ibyte0+/*ibyte*/0] |= 1<<6;
-    u2d[nnj-2*j0+3][ibyte0+/*ibyte*/0] |= 1<<5;
-    u2d[nnj-2*j0+3][ibyte0+/*ibyte*/0] |= 1<<4;
-    u2d[nnj-2*j0+2][ibyte0+/*ibyte*/0] |= 1<<4;
-    u2d[nnj-2*j0+1][ibyte0+/*ibyte*/0] |= 1<<5;
+    u2d[nnj-2*j0+myY*nibytes+3][ibyte0+/*ibyte*/0] |= 1<<(6-myX);
+    u2d[nnj-2*j0+myY*nibytes+3][ibyte0+/*ibyte*/0] |= 1<<(5-myX);
+    u2d[nnj-2*j0+myY*nibytes+3][ibyte0+/*ibyte*/0] |= 1<<(4-myX);
+    u2d[nnj-2*j0+myY*nibytes+2][ibyte0+/*ibyte*/0] |= 1<<(4-myX);
+    u2d[nnj-2*j0+myY*nibytes+1][ibyte0+/*ibyte*/0] |= 1<<(5-myX);
   }
   else
   {
     // Initialize with glider pattern in top left corner.
-    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<6;
-    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<5;
-    u2d[j0+3][ibyte0+/*ibyte*/0] |= 1<<4;
-    u2d[j0+2][ibyte0+/*ibyte*/0] |= 1<<4;
-    u2d[j0+1][ibyte0+/*ibyte*/0] |= 1<<5;
+    u2d[j0+myY*nibytes+3][ibyte0+/*ibyte*/0] |= 1<<(6-myX);
+    u2d[j0+myY*nibytes+3][ibyte0+/*ibyte*/0] |= 1<<(5-myX);
+    u2d[j0+myY*nibytes+3][ibyte0+/*ibyte*/0] |= 1<<(4-myX);
+    u2d[j0+myY*nibytes+2][ibyte0+/*ibyte*/0] |= 1<<(4-myX);
+    u2d[j0+myY*nibytes+1][ibyte0+/*ibyte*/0] |= 1<<(5-myX);
   }
 
   cout << endl
@@ -124,7 +143,7 @@ int main( int argc, char** argv)
        << "Universe seed:" << endl;
   display_with_overlap( u2d, nnibytes, nnj, j0, ibyte0, myID);
 
-  int t, nt = nj*4;
+  int t, nt = 1; // nj*4;
   int ibytep, ibytem;
   int ip, im;
   int jp, jm;
@@ -132,87 +151,86 @@ int main( int argc, char** argv)
 
   for( t=0; t<nt; t++)
   {
-
     // Communicate
-    if( 1-myID%2)
+    if( 1-myY%2)
     {
-      // Proc myID to Proc myID+1 (Even procs to odd procs in positive direction.)
+      // Proc myY to Proc myY+1 (Even procs to odd procs in positive direction.)
       MPI_Send(
             /* const void *buf       */ u1d + nnibytes*(nnj-2*j0)
           , /* int count             */ nnibytes*j0
           , /* MPI_Datatype datatype */ MPI_CHAR
-          , /* int dest              */ myID+1
+          , /* int dest              */ myX*numY + myY+1
           , /* int tag               */ 0
           , /* MPI_Comm comm         */ MPI_COMM_WORLD
           );
-      // Proc myID to Proc myID+1 (Odd procs to even procs in negative direction.)
+      // Proc myY to Proc myY+1 (Odd procs to even procs in negative direction.)
       MPI_Recv(
             /* const void *buf       */ u1d + nnibytes*(nnj-j0)
           , /* int count             */ nnibytes*j0
           , /* MPI_Datatype datatype */ MPI_CHAR
-          , /* int dest              */ myID+1
+          , /* int dest              */ myX*numY + myY+1
           , /* int tag               */ 0
           , /* MPI_Comm comm         */ MPI_COMM_WORLD
           , /* MPI_Status* status    */ &status
           );
-      // Proc myID to Proc myID-1 (Even procs to odd procs in negative direction.)
+      // Proc myY to Proc myY-1 (Even procs to odd procs in negative direction.)
       MPI_Send(
             /* const void *buf       */ u1d + nnibytes*j0
           , /* int count             */ nnibytes*j0
           , /* MPI_Datatype datatype */ MPI_CHAR
-          , /* int dest              */ (myID+numProcs-1)%numProcs
+          , /* int dest              */ myX*numY + (myY+numY-1)%numY
           , /* int tag               */ 0
           , /* MPI_Comm comm         */ MPI_COMM_WORLD
           );
-      // Proc myID to Proc myID-1 (Odd procs to even procs in positive direction)
+      // Proc myY to Proc myY-1 (Odd procs to even procs in positive direction)
       MPI_Recv(
             /* const void *buf       */ u1d + 0
           , /* int count             */ nnibytes*j0
           , /* MPI_Datatype datatype */ MPI_CHAR
-          , /* int dest              */ (myID+numProcs-1)%numProcs
+          , /* int dest              */ myX*numY + (myY+numY-1)%numY
           , /* int tag               */ 0
           , /* MPI_Comm comm         */ MPI_COMM_WORLD
           , /* MPI_Status* status    */ &status
           );
 
     }
-    else if( myID%2)
+    else if( myY%2)
     {
-      // Proc myID to Proc myID-1 (Even procs to odd procs in positive direction.)
+      // Proc myY to Proc myY-1 (Even procs to odd procs in positive direction.)
       MPI_Recv(
             /* const void *buf       */ u1d + 0
           , /* int count             */ nnibytes*j0
           , /* MPI_Datatype datatype */ MPI_CHAR
-          , /* int dest              */ myID-1
+          , /* int dest              */ myX*numY + myY-1
           , /* int tag               */ 0
           , /* MPI_Comm comm         */ MPI_COMM_WORLD
           , /* MPI_Status* status    */ &status
           );
-      // Proc myID to Proc myID-1 (Odd procs to even procs in negative direction.)
+      // Proc myY to Proc myY-1 (Odd procs to even procs in negative direction.)
       MPI_Send(
             /* const void *buf       */ u1d + nnibytes*j0
           , /* int count             */ nnibytes*j0
           , /* MPI_Datatype datatype */ MPI_CHAR
-          , /* int dest              */ myID-1
+          , /* int dest              */ myX*numY + myY-1
           , /* int tag               */ 0
           , /* MPI_Comm comm         */ MPI_COMM_WORLD
           );
-      // Proc myID to Proc myID+1 (Even procs to odd procs in negative direction.)
+      // Proc myY to Proc myY+1 (Even procs to odd procs in negative direction.)
       MPI_Recv(
             /* const void *buf       */ u1d + nnibytes*(nnj-j0)
           , /* int count             */ nnibytes*j0
           , /* MPI_Datatype datatype */ MPI_CHAR
-          , /* int dest              */ (myID+1)%numProcs
+          , /* int dest              */ myX*numY + (myY+1)%numY
           , /* int tag               */ 0
           , /* MPI_Comm comm         */ MPI_COMM_WORLD
           , /* MPI_Status* status    */ &status
           );
-      // Proc myID to Proc myID+1 (Odd procs to even procs in positive direction)
+      // Proc myY to Proc myY+1 (Odd procs to even procs in positive direction)
       MPI_Send(
             /* const void *buf       */ u1d + nnibytes*(nnj-2*j0)
           , /* int count             */ nnibytes*j0
           , /* MPI_Datatype datatype */ MPI_CHAR
-          , /* int dest              */ (myID+1)%numProcs
+          , /* int dest              */ myX*numY + (myY+1)%numY
           , /* int tag               */ 0
           , /* MPI_Comm comm         */ MPI_COMM_WORLD
           );
@@ -223,7 +241,97 @@ int main( int argc, char** argv)
       cout << __FILE__ << " -- ERROR line " << __LINE__ << ": Unhandled case." << endl;
     }
 
-    if( false /*dump after each comm*/) // TODO: Add flag for this.
+    if( 1-myX%2)
+    {
+      // Proc myY to Proc myY+1 (Even procs to odd procs in positive direction.)
+      MPI_Send(
+            /* const void *buf       */ /*???*/
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ (myX+1)*numY + myY
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          );
+      // Proc myY to Proc myY+1 (Odd procs to even procs in negative direction.)
+      MPI_Recv(
+            /* const void *buf       */ u1d + nnibytes*(nnj-j0)
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ myX*numY + myY+1
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          , /* MPI_Status* status    */ &status
+          );
+      // Proc myY to Proc myY-1 (Even procs to odd procs in negative direction.)
+      MPI_Send(
+            /* const void *buf       */ u1d + nnibytes*j0
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ myX*numY + (myY+numY-1)%numY
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          );
+      // Proc myY to Proc myY-1 (Odd procs to even procs in positive direction)
+      MPI_Recv(
+            /* const void *buf       */ u1d + 0
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ myX*numY + (myY+numY-1)%numY
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          , /* MPI_Status* status    */ &status
+          );
+
+    }
+    else if( myX%2)
+    {
+      // Proc myY to Proc myY-1 (Even procs to odd procs in positive direction.)
+      MPI_Recv(
+            /* const void *buf       */ /*???*/
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ (myX-1)*numY + myY
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          , /* MPI_Status* status    */ &status
+          );
+      // Proc myY to Proc myY-1 (Odd procs to even procs in negative direction.)
+      MPI_Send(
+            /* const void *buf       */ u1d + nnibytes*j0
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ myX*numY + myY-1
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          );
+      // Proc myY to Proc myY+1 (Even procs to odd procs in negative direction.)
+      MPI_Recv(
+            /* const void *buf       */ u1d + nnibytes*(nnj-j0)
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ myX*numY + (myY+1)%numY
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          , /* MPI_Status* status    */ &status
+          );
+      // Proc myY to Proc myY+1 (Odd procs to even procs in positive direction)
+      MPI_Send(
+            /* const void *buf       */ u1d + nnibytes*(nnj-2*j0)
+          , /* int count             */ nnibytes*j0
+          , /* MPI_Datatype datatype */ MPI_CHAR
+          , /* int dest              */ myX*numY + (myY+1)%numY
+          , /* int tag               */ 0
+          , /* MPI_Comm comm         */ MPI_COMM_WORLD
+          );
+
+    }
+    else
+    {
+      cout << __FILE__ << " -- ERROR line " << __LINE__ << ": Unhandled case." << endl;
+    }
+
+
+    if( true /*dump after each comm*/) // TODO: Add flag for this.
     {
       cout << endl
            << "Proc " << myID << " "
