@@ -3,6 +3,7 @@
 ### Contributers:
 * Andrew Giles
 * Jeff Hartman
+* Dr. Thorne
 
 #### Instructions:
 1. Clone directory
